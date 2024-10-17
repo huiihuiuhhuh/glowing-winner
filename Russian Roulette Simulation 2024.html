@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h1 id="choosediff" class="txt">Choose a difficulty</h1>
+<h1 id="title" class="txt">Russian Roulette Simulation 2024</h1>
+<h1 id="guidetitle" class="txt">The guide</h1>
+<p id="guidetext" class="txt">Click play, then choose a difficulty.
+Choose to shoot with or without randomly 
+spinning the cylinder when it's your turn.
+If you lose all of your lives then you lose, 
+if the enemy loses all of theirs, you win.
+Try not shooting when you know there's
+a bullet in the chamber, because it will
+kill you if you shoot, not the enemy.
+Just imagine that there's a revolver.
+There are three bullets in the cylinder every reload.</p>
+
+<h1 id="gameFinishtxt" class="txt"></h1>
+
+<button id="playbtn" class="btns">play</button>
+<button id="guidebtn" class="btns">guide</button>
+<button id="backbtn" class="btns">back to title</button>
+
+<button id="easybtn" class="btns">easy</button>
+<button id="medbtn" class="btns">intermediate</button>
+<button id="hardbtn" class="btns">hard</button>
+
+<img id="enemySprite" style="margin: 0 auto" src="enemy.jpg">
+<p id="enemyHealthtxt" class="txt"></p>
+<button id="shootSpinbtn" class="btns">spin & shoot</button>
+<button id="shootbtn" class="btns">shoot</button>
+<p id="infotxt" class="txt"></p>
+<p id="playerHealthtxt" class="txt"></p>
+<img id="playerSprite" style="margin: 0 auto" src="player.jpg">
+
+<style>
+.txt {
+	height: fit-content;
+	width: fit-content;
+	margin: 0 auto;
+	white-space: pre-wrap;
+	text-align: justify;
+	text-align-last: center;
+}
+.btns {
+	height: 75px;
+	width: 150px;
+	background-color: white;
+	font-size: 20px;
+	border-width: 5px;
+	border-style: solid;
+	margin: 0 auto;
+	transition: all 0.75s;
+}
+.btns.animation {
+	height: 100px;
+	width: 200px;
+	font-size: 25px;
+	border-color: gold;
+	transition: all 0.5s;
+}
+</style>
+
+<script>
+// Thank you to https://bost.ocks.org/mike/shuffle/
+function shuffle(array) {
+	var arrLength = array.length, lastElement, swap;
+	while (arrLength) {
+		swap = Math.floor(Math.random() * arrLength--);
+		lastElement = array[arrLength];
+		array[arrLength] = array[swap];
+		array[swap] = lastElement;
+	}
+	return array;
+}
+function shoot(spin){
+	// We add a cooldown to prevent the player from clicking the button rapidly.
+	if (cooldown) {
+		return;
+	}
+	cooldown=true
+	if (spin) {
+		chamberPosition = Math.floor(Math.random()*6);
+		var spinMessage = ' spin and';
+	} else {
+		chamberPosition += 1;
+		var spinMessage = '';
+	}
+	var reload = 'The gun was reloaded, since it ran out of bullets. ';
+	bullets.forEach(function(bullet){
+		if (bullet == 1) {
+			reload = '';
+		}
+	});
+	if (reload != '') {
+		bullets = shuffle([1,1,1,0,0,0]);
+	}
+	if (bullets[chamberPosition] == 0) {
+		document.getElementById("infotxt").innerText=`${reload}You${spinMessage} shoot.\nThe gun did not fire, and you live.`;
+	} else {
+		document.getElementById("infotxt").innerText=`${reload}You${spinMessage} shoot.\nThe gun fired, and you lose a life.`;
+		playerHealth -= 1;
+		if (playerHealth <= 0) {
+			switchScreen("gameFinish");
+			document.getElementById("gameFinishtxt").innerText="You lose. You lost all of your lives.";
+			cooldown=false;
+			return;
+		}
+		document.getElementById("playerHealthtxt").innerText="Your lives: "+playerHealth;
+		bullets[chamberPosition] = 0;
+	}
+	setTimeout(function(){
+		if (Math.random() > 0.8) {
+			spin = true;
+		} else {
+			spin = false;
+		}
+		if (spin) {
+			chamberPosition = Math.floor(Math.random()*6);
+			var spinMessage = ' spins and';
+		} else {
+			chamberPosition += 1;
+			var spinMessage = '';
+		}
+		var reload = 'The gun was reloaded, since it ran out of bullets. ';
+		bullets.forEach(function(bullet){
+			if (bullet == 1) {
+				reload = '';
+			}
+		});
+		if (reload != '') {
+			bullets = shuffle([1,1,1,0,0,0]);
+		}
+		if (bullets[chamberPosition] == 0) {
+			document.getElementById("infotxt").innerText=`${reload}The enemy${spinMessage} shoots.\nThe gun did not fire, and the enemy lives. Your turn.\nFrom what you can tell, the chamber is in position ${chamberPosition}.`;
+		} else {
+			document.getElementById("infotxt").innerText=`${reload}The enemy${spinMessage} shoots.\nThe gun fired, and the enemy loses a life. Your turn.\nFrom what you can tell, the chamber is in position ${chamberPosition}.`;
+			enemyHealth -= 1;
+			if (enemyHealth <= 0) {
+				switchScreen("gameFinish");
+				document.getElementById("gameFinishtxt").innerText="You win. The enemy lost all of their lives.";
+				cooldown=false;
+			}
+			document.getElementById("enemyHealthtxt").innerText="Enemy lives: "+enemyHealth;
+			bullets[chamberPosition] = 0;
+		}
+		cooldown=false;
+	}, 2500);
+}
+function buttonFunction(btn){
+	switch(btn){
+	case "shootbtn":shoot(false);break;
+	case "shootSpinbtn":shoot(true);break;
+	case "guidebtn":switchScreen("guide");break;
+	case "backbtn":switchScreen("title");break;
+	case "playbtn":switchScreen("gamedifficulty");break;
+	
+	case "hardbtn":
+	case "medbtn":
+	case "easybtn":
+		// 1 signifies a bullet.
+		bullets = shuffle([1,1,1,0,0,0]);
+		chamberPosition = 0;
+		switchScreen("game");
+		difficulty = btn;
+		cooldown = false;
+		switch(difficulty){
+		case "easybtn":
+			playerHealth = 5;
+			enemyHealth = 3;
+			break;
+		case "medbtn":
+			playerHealth = 5;
+			enemyHealth = 5;
+			break;
+		case "hardbtn":
+			playerHealth = 3;
+			enemyHealth = 5;
+			break;
+		}
+		document.getElementById("enemyHealthtxt").innerText="Enemy lives: "+enemyHealth;
+		document.getElementById("playerHealthtxt").innerText="Your lives: "+playerHealth;
+		document.getElementById("infotxt").innerText="It's your turn. There are 3 bullets in the cylinder.";
+	break;
+	}
+}
+function visibleElements(elements) {
+	document.querySelectorAll('*:not(html,body,script,head,style)').forEach(function(element){
+		// Hides the element.
+    	element.style.display='none';
+	});
+	for(i=0;i<elements.length;i++) {
+		// Shows the element.
+		document.getElementById(elements[i]).style.display='block';
+	}
+}
+function switchScreen(scrn) {
+	switch(scrn){
+	case "guide":
+		visibleElements([
+		"guidetitle",
+		"backbtn",
+		"guidetext"
+		]);break;
+		
+	case "title":
+		visibleElements([
+		"guidebtn",
+		"playbtn",
+		"title"
+		]);break;
+		
+	case "gamedifficulty":
+		visibleElements([
+		"easybtn",
+		"medbtn",
+		"hardbtn",
+		"choosediff"
+		]);break;
+		
+	case "game":
+		visibleElements([
+		"enemySprite",
+		"enemyHealthtxt",
+		"shootbtn",
+		"shootSpinbtn",
+		"infotxt",
+		"playerHealthtxt",
+		"playerSprite"
+		]);break;
+		
+	case "gameFinish":
+		visibleElements([
+		"gameFinishtxt",
+		"backbtn"
+		]);break;
+	}
+}
+var buttons = document.querySelectorAll("button"), 
+inguide = false, 
+difficulty, 
+cooldown, 
+playerHealth, 
+enemyHealth, 
+chamberPosition, 
+bullets;
+
+buttons.forEach(function(object){
+	// Handles adding functions to each button.
+	object.addEventListener("click", function(){
+		buttonFunction(object.id);
+	});
+	// Animates the button when hovering over it and vice versa.
+	object.addEventListener("mouseover", function(){
+		object.classList.add('animation');
+		if (Math.random()>0.5) {
+			object.style.setProperty('rotate', Math.random()*8+2+'deg');
+		} else {
+			object.style.setProperty('rotate', -Math.random()*8-2+'deg');
+		}
+	});
+	object.addEventListener("mouseout", function(){
+		object.classList.remove('animation');
+		object.style.setProperty('rotate', '0deg');
+	});
+});
+switchScreen("title");
+</script>
+
+</body>
+</html> 
+
